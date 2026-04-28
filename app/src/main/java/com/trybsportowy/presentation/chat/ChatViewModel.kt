@@ -42,33 +42,38 @@ class ChatViewModel(
             val fourDaysAgo = todayTimestamp - (3 * 86400000L)
             val recentData = repository.getReadinessSince(fourDaysAgo)
 
-            // 3. Budujemy super-kontekst dla elitarnego Trenera AI
+            // 3. Budujemy super-kontekst dla Trenera
             val contextString = buildString {
                 for (i in 0..3) {
                     val dayMillis = todayTimestamp - (i * 86400000L)
                     val dayData = recentData.find { it.dateTimestamp == dayMillis }
                     val label = when(i) {
-                        0 -> "Dzisiaj (100% wagi)"
-                        1 -> "Wczoraj (75% wagi)"
-                        2 -> "2 dni temu (50% wagi)"
-                        else -> "3 dni temu (20% wagi)"
+                        0 -> "Dzisiaj"
+                        1 -> "Wczoraj"
+                        2 -> "2 dni temu"
+                        else -> "3 dni temu"
                     }
                     if (dayData != null) {
-                        // Wyciągamy same cyfry/litery dla AI, żeby oszczędzać limit tokenów
                         appendLine("$label: H${dayData.hrvCode.last()}, S${dayData.sleepCode.last()}, P${dayData.physicalLoadCode.last()}, W${dayData.workCode.last()}, A${dayData.alcoholCode.last()}")
                     } else {
                         appendLine("$label: Brak danych")
                     }
                 }
-                appendLine("Wiadomość od zawodnika: \"$text\"")
             }
+
+            // Potężny System Prompt trenera czatu
+            val systemPrompt = "Jesteś trenerem przygotowania motorycznego. Przeanalizuj moje logi z ostatnich dni:\n$contextString\nOdpowiedz na moją wiadomość szczerze i profesjonalnie."
 
             // 4. Pokazujemy, że Trener pisze
             val typingMsg = ChatMessageEntity(dateTimestamp = todayTimestamp, timestamp = System.currentTimeMillis(), role = "model", content = "Trener analizuje dane fizjologiczne...")
             messages.add(typingMsg)
 
-            // 5. Strzał do API
-            val aiResponseText = aiRepository.sendMessage(userMessage = text, readinessContext = contextString)
+            // 5. Strzał do PŁATNEGO API (Używamy mądrego modelu)
+            val aiResponseText = aiRepository.sendMessage(
+                userMessage = text,
+                systemPromptText = systemPrompt,
+                modelId = "gpt-5.4" // Mądry model dla Czatów
+            )
 
             // 6. Podmiana na właściwą odpowiedź
             messages.removeLast()

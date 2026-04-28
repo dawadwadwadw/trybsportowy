@@ -5,13 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.trybsportowy.BuildConfig
 import com.trybsportowy.data.local.DailyReadinessEntity
-import com.trybsportowy.data.remote.Content
-import com.trybsportowy.data.remote.GeminiApiClient
-import com.trybsportowy.data.remote.GeminiRequest
-import com.trybsportowy.data.remote.Part
-import com.trybsportowy.data.remote.SystemInstruction
+import com.trybsportowy.data.repository.AiRepositoryImpl
 import com.trybsportowy.domain.repository.ReadinessRepository
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -39,7 +34,7 @@ class QuickEntryViewModel(
     var headerTitle by mutableStateOf("Ładowanie...")
 
     private val normalizedTimestamp: Long
-    private val API_KEY = BuildConfig.GEMINI_API_KEY
+    private val aiRepository = AiRepositoryImpl()
 
     init {
         normalizedTimestamp = Instant.ofEpochMilli(initialDate)
@@ -85,19 +80,21 @@ class QuickEntryViewModel(
         if (journalText.isBlank()) return
         isAiLoading = true
         try {
-            val systemPrompt = "Jesteś analizatorem stresu. Przeczytaj tekst użytkownika i oceń obciążenie jego organizmu. Zwróć TYLKO JEDNĄ LITERĘ i nic więcej. Legenda: L (dzień chillowy/normalny), M (lekki stres, małe błędy w diecie, np. 1 fakt negatywny), H (duży drenaż, np. kłótnia + śmieciowe jedzenie + odwodnienie), X (ekstremalny kryzys, choroba, zapaść systemu)."
+            // SZYBKI MÓZG: gpt-5.4-mini
+            val systemPrompt = "Jesteś analizatorem stresu w sporcie. Przeczytaj tekst użytkownika i oceń obciążenie jego organizmu. Zwróć TYLKO JEDNĄ LITERĘ i nic więcej. Legenda: L (chill), M (lekki stres), H (duży drenaż), X (kryzys)."
 
-            val request = GeminiRequest(
-                contents = listOf(Content(role = "user", parts = listOf(Part(text = journalText)))),
-                systemInstruction = SystemInstruction(parts = listOf(Part(text = systemPrompt)))
+            val resultText = aiRepository.sendMessage(
+                userMessage = journalText,
+                systemPromptText = systemPrompt,
+                modelId = "gpt-5.4-mini"
             )
 
-            val response = GeminiApiClient.apiService.generateContent(apiKey = API_KEY, request = request)
-            val result = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text?.trim()?.uppercase()
+            val finalLetter = resultText.trim().uppercase().take(1)
 
-            if (result != null && result in listOf("L", "M", "H", "X")) {
-                stress = result
+            if (finalLetter in listOf("L", "M", "H", "X")) {
+                stress = finalLetter
             }
+
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {

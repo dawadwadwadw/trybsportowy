@@ -359,7 +359,7 @@ fun AiDetectiveWidget(history: List<DailyReadinessEntity>) {
 suspend fun fetchAiReportFromApi(history: List<DailyReadinessEntity>): String = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
     try {
         val today = java.time.LocalDate.now()
-        // Pobieramy do 28 dni wstecz, żeby AI widziało trend, nawet jeśli masz tylko 5 wpisów
+        // Pobieramy do 28 dni wstecz, żeby AI widziało trend
         val daysData = (0..27).mapNotNull { i ->
             val date = today.minusDays(i.toLong())
             val timestamp = date.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -372,46 +372,33 @@ suspend fun fetchAiReportFromApi(history: List<DailyReadinessEntity>): String = 
         }.joinToString("\n")
 
         val systemPrompt = """
-            Jesteś elitarnym dyrektorem ds. wydajności sportowej i fizjologiem klinicznym specjalizującym się w sportach walki. 
-            Twoim zadaniem jest przeprowadzenie rygorystycznej analizy neuro-metabolicznej na podstawie dostarczonych logów.
+            Jesteś elitarnym dyrektorem ds. wydajności sportowej i fizjologiem klinicznym.
+            1. CNS DRAIN: Sen (S) i Trening (P) to Twoje krytyczne wektory.
+            2. LAG EFFECT: Obciążenie z T-1 manifestuje się w HRV (H) w dniu T+1.
+            3. ALLOSTATIC LOAD: Praca (W) i Stres (D) to drenaż glikogenu.
+            4. HIERARCHIA HRV: H0/H1 to non-functional overreaching.
             
-            PARADYGMATY ANALIZY:
-            1. CNS DRAIN: Sen (S) i Trening (P) to Twoje krytyczne wektory. Brak snu przy wysokim P traktuj jako stan zagrożenia urazem.
-            2. LAG EFFECT: Rozpoznaj, że obciążenie z dnia T-1 często manifestuje się w HRV (H) dopiero w dniu T lub T+1.
-            3. ALLOSTATIC LOAD: Praca (W) i Stres (D) to nie są "dodatki". To realny drenaż glikogenu i zasobów neuronalnych.
-            4. HIERARCHIA HRV: H0/H1 to dla Ciebie sygnał non-functional overreaching.
+            SŁOWNIK: S: 0-1 (Deprywacja), 2-3 (Eustres), 4 (Superkompensacja). H: 0 (Zapaść), 1 (Dominacja współczulna), 2 (Homeostaza), 3 (Szczyt przywspółczulny). P/W: Skala 1-4. A: Neurotoksyczność.
             
-            SŁOWNIK NAUKOWY:
-            - S: 0-1 (Deprywacja), 2-3 (Eustres), 4 (Superkompensacja).
-            - H: 0 (Zapaść autonomiczna), 1 (Dominacja współczulna/przetrenowanie), 2 (Homeostaza), 3 (Szczyt przywspółczulny).
-            - P/W: Skala intensywności metabolicznej (1-4).
-            - A: Neurotoksyczność i zaburzenie architektury snu REM.
-            
-            STRUKTURA RAPORTU (BĄDŹ BARDZO SZCZEGÓŁOWY):
-            I. AUDYT NEURO-FIZJOLOGICZNY: Rozbij korelacje między snem a HRV. Wytknij, jak drenaż z pracy (W) wpływa na Twoją zdolność do generowania mocy w (P).
-            II. ANALIZA KRYTYCZNA: Znajdź "ukrytych zabójców" formy. Czy alkohol A1 przy stresie D:M niszczy Cię bardziej niż ciężki trening?
-            III. PREDYKCJA: Na podstawie ostatnich 5 dni, jaki jest Twój prognozowany Readiness na kolejne 48h? Czy grozi Ci kontuzja?
-            IV. PROTOKÓŁ NAPRAWCZY (DAMAGE CONTROL): Podaj konkretne kroki (suplementacja, temperatura, typ aktywności, techniki oddechowe) dopasowane do dzisiejszego stanu.
-            
-            STYL: Naukowy, brutalnie szczery, techniczny, autorytatywny.
+            STRUKTURA RAPORTU:
+            I. AUDYT NEURO-FIZJOLOGICZNY.
+            II. ANALIZA KRYTYCZNA.
+            III. PREDYKCJA NA 48H.
+            IV. PROTOKÓŁ NAPRAWCZY (DAMAGE CONTROL).
+            STYL: Naukowy, brutalnie szczery.
         """.trimIndent()
 
-        val userMessage = "Oto moje logi z ostatnich dni:\n$daysData\n\nPrzeprowadź pełną analizę."
+        val userMessage = "Moje logi z 28 dni:\n$daysData\nPrzeprowadź pełną analizę."
 
-        val request = com.trybsportowy.data.remote.GeminiRequest(
-            systemInstruction = com.trybsportowy.data.remote.SystemInstruction(listOf(com.trybsportowy.data.remote.Part(systemPrompt))),
-            contents = listOf(com.trybsportowy.data.remote.Content("user", listOf(com.trybsportowy.data.remote.Part(userMessage))))
+        // INICJALIZUJEMY NASZE NOWE REPOZYTORIUM ZAMIAST STAREGO GEMINI
+        val aiRepository = com.trybsportowy.data.repository.AiRepositoryImpl()
+
+        // Używamy DROGIEGO i MĄDREGO modelu do skomplikowanego raportu
+        aiRepository.sendMessage(
+            userMessage = userMessage,
+            systemPromptText = systemPrompt,
+            modelId = "gpt-5.4" // Zmień na dokładną nazwę modelu u Twojego dostawcy
         )
-
-        val apiKey = "AIzaSyAY0Bd-suOFkiCwun6dCvkq5-KzKrvv0_o" // TEN SAM CO W AIREPOSITORYIMPL
-
-        val response = com.trybsportowy.data.remote.GeminiApiClient.apiService.generateContent(
-            apiKey = apiKey,
-            request = request
-        )
-
-        response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-            ?: "Błąd: Brak danych od trenera."
 
     } catch (e: Exception) {
         "Błąd krytyczny laboratorium: ${e.localizedMessage}"
