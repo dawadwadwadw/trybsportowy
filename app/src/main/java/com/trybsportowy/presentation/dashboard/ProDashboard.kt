@@ -356,51 +356,66 @@ fun AiDetectiveWidget(history: List<DailyReadinessEntity>) {
 
 
 
-suspend fun fetchAiReportFromApi(history: List<DailyReadinessEntity>): String = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-    try {
-        val today = java.time.LocalDate.now()
-        // Pobieramy do 28 dni wstecz, żeby AI widziało trend
-        val daysData = (0..27).mapNotNull { i ->
-            val date = today.minusDays(i.toLong())
-            val timestamp = date.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val entry = history.find { e ->
-                java.time.Instant.ofEpochMilli(e.dateTimestamp).atZone(java.time.ZoneId.systemDefault()).toLocalDate() == date
-            }
-            if (entry != null) {
-                "Dzień ${28-i} [$date]: S:${entry.sleepCode}, H:${entry.hrvCode}, P:${entry.physicalLoadCode}, W:${entry.workCode}, A:${entry.alcoholCode}, D:${entry.stressCode}"
-            } else null
-        }.joinToString("\n")
+suspend fun fetchAiReportFromApi(history: List<DailyReadinessEntity>): String =
+    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            val today = java.time.LocalDate.now()
+            val daysData = (0..27).mapNotNull { i ->
+                val date = today.minusDays(i.toLong())
+                val entry = history.find { e ->
+                    java.time.Instant.ofEpochMilli(e.dateTimestamp)
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .toLocalDate() == date
+                }
+                if (entry != null) {
+                    "Dzień ${28 - i} [$date]: S:${entry.sleepCode}, H:${entry.hrvCode}, " +
+                            "P:${entry.physicalLoadCode}, W:${entry.workCode}, " +
+                            "A:${entry.alcoholCode}, D:${entry.stressCode}"
+                } else null
+            }.joinToString("\n")
 
-        val systemPrompt = """
-            Jesteś elitarnym dyrektorem ds. wydajności sportowej i fizjologiem klinicznym.
-            1. CNS DRAIN: Sen (S) i Trening (P) to Twoje krytyczne wektory.
-            2. LAG EFFECT: Obciążenie z T-1 manifestuje się w HRV (H) w dniu T+1.
-            3. ALLOSTATIC LOAD: Praca (W) i Stres (D) to drenaż glikogenu.
-            4. HIERARCHIA HRV: H0/H1 to non-functional overreaching.
-            
-            SŁOWNIK: S: 0-1 (Deprywacja), 2-3 (Eustres), 4 (Superkompensacja). H: 0 (Zapaść), 1 (Dominacja współczulna), 2 (Homeostaza), 3 (Szczyt przywspółczulny). P/W: Skala 1-4. A: Neurotoksyczność.
-            
-            STRUKTURA RAPORTU:
-            I. AUDYT NEURO-FIZJOLOGICZNY.
-            II. ANALIZA KRYTYCZNA.
-            III. PREDYKCJA NA 48H.
-            IV. PROTOKÓŁ NAPRAWCZY (DAMAGE CONTROL).
-            STYL: Naukowy, brutalnie szczery.
-        """.trimIndent()
+            val systemPrompt = """
+Jesteś elitarnym Systemem Analitycznym Wydajności (High-Performance Director). Twoim zadaniem jest analiza logów zawodnika sportów walki.
 
-        val userMessage = "Moje logi z 28 dni:\n$daysData\nPrzeprowadź pełną analizę."
+### 1. TWOJA WIEDZA (LEGENDA KODÓW):
+- S (Sleep/Sen): S0 (Zapaść/0-4h), S1 (Słaby/5h), S2 (Średni/6h), S3 (Dobry/7-8h), S4 (Idealny/9h+). 
+- H (HRV/Regeneracja): H0 (Krytyczny spadek), H1 (Obniżony), H2 (Norma), H3 (Wysoka gotowość).
+- P (Physical Load/Trening): P0 (Brak), P1 (Lekki), P2 (Średni), P3 (Ciężki), P4 (Ekstremalny).
+- W (Work/Praca): W0 (Brak), W1 (Lekka), W2 (Standard), W3 (Stresująca), W4 (Wycieńczająca).
+- A (Alcohol/Alkohol): A0 (Brak), A1 (Mało), A2 (Średnio), A3 (Dużo/Kac).
+- D (Stress/Drenaż): L (Niski), M (Średni), H (Wysoki), X (Krytyczny).
 
-        // INICJALIZUJEMY NASZE NOWE REPOZYTORIUM ZAMIAST STAREGO GEMINI
-        val aiRepository = com.trybsportowy.data.repository.AiRepositoryImpl()
+### 2. LOGIKA ANALIZY:
+- Korelacja S + P: Brak snu (S0/S1) przy wysokim obciążeniu (P3/P4) = 80% większe ryzyko kontuzji.
+- Wpływ A na H: Nawet A1 zazwyczaj obniża HRV następnego dnia. Wytknij to użytkownikowi.
+- Kumulacja: Seria P3 + W3 przy wciąż wysokim H2 = ostrzeż o zapaści za 24-48h.
+- Drenaż Systemowy: Praca (W) i Stres (D) wysysają glikogen tak samo jak trening.
 
-        // Używamy DROGIEGO i MĄDREGO modelu do skomplikowanego raportu
-        aiRepository.sendMessage(
-            userMessage = userMessage,
-            systemPromptText = systemPrompt,
-            modelId = "gpt-5.4" // Zmień na dokładną nazwę modelu u Twojego dostawcy
-        )
+### 3. FORMAT RAPORTU:
+## I. STAN CNS
+## II. WYKRYTE KORELACJE  
+## III. CZERWONE FLAGI
+## IV. DAMAGE CONTROL
 
-    } catch (e: Exception) {
-        "Błąd krytyczny laboratorium: ${e.localizedMessage}"
+Mów jak profesjonalny trener: konkretnie, technicznie, bez zbędnych uprzejmości.
+            """.trimIndent()
+
+            val userMessage = "Moje logi z 28 dni:\n$daysData\nPrzeprowadź pełną analizę."
+
+            val aiRepository = com.trybsportowy.data.repository.AiRepositoryImpl()
+
+            // NOWA SYGNATURA: conversationHistory zamiast userMessage + systemPromptText
+            val conversationHistory = listOf(
+                com.trybsportowy.data.remote.Message(role = "system", content = systemPrompt),
+                com.trybsportowy.data.remote.Message(role = "user", content = userMessage)
+            )
+
+            aiRepository.sendMessage(
+                conversationHistory = conversationHistory,
+                modelId = "gpt-5.4"
+            )
+
+        } catch (e: Exception) {
+            "Błąd krytyczny laboratorium: ${e.localizedMessage}"
+        }
     }
-}

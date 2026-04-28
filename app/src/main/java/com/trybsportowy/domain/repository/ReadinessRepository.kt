@@ -12,5 +12,7 @@ interface ReadinessRepository {
 
     suspend fun saveChatMessage(message: ChatMessageEntity)
     suspend fun getChatHistory(dayTimestamp: Long): List<ChatMessageEntity>
+    suspend fun deleteChatMessage(message: ChatMessageEntity)
+    suspend fun clearChatForDay(dayTimestamp: Long)
 
 }

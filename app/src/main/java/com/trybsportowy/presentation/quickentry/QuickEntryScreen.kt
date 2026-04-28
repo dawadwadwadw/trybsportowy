@@ -27,29 +27,7 @@ fun QuickEntryScreen(viewModel: QuickEntryViewModel, onDismiss: () -> Unit) {
             Text(text = viewModel.headerTitle, style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Dziennik Dnia (AI)
-            OutlinedTextField(
-                value = viewModel.journalText,
-                onValueChange = { viewModel.journalText = it },
-                label = { Text("Dziennik Dnia (AI analizuje stres)") },
-                placeholder = { Text("Np. Dziś był ciężki dzień, kłótnia w pracy i mało piłem wody...") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Button(
-                onClick = { scope.launch { viewModel.evaluateStressWithAI(viewModel.journalText) } },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !viewModel.isAiLoading && viewModel.journalText.isNotBlank()
-            ) {
-                if (viewModel.isAiLoading) {
-                    CircularProgressIndicator(size = 20.dp, strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text("Oceń Stres (AI)")
-            }
+
 
             Spacer(modifier = Modifier.height(16.dp))
 

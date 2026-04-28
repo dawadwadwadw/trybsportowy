@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trybsportowy.data.local.DailyReadinessEntity
+import com.trybsportowy.data.remote.Message
 import com.trybsportowy.data.repository.AiRepositoryImpl
 import com.trybsportowy.domain.repository.ReadinessRepository
 import kotlinx.coroutines.launch
@@ -19,7 +20,6 @@ class QuickEntryViewModel(
     private val initialDate: Long
 ) : ViewModel() {
 
-    // 1. Zmienne stanu
     var sleep by mutableStateOf("S0")
     var hrv by mutableStateOf("H0")
     var stress by mutableStateOf("L")
@@ -27,14 +27,11 @@ class QuickEntryViewModel(
     var alcohol by mutableStateOf("A0")
     var physical by mutableStateOf("P0")
 
-    // AI States
     var journalText by mutableStateOf("")
     var isAiLoading by mutableStateOf(false)
-
     var headerTitle by mutableStateOf("Ładowanie...")
 
     private val normalizedTimestamp: Long
-    private val aiRepository = AiRepositoryImpl()
 
     init {
         normalizedTimestamp = Instant.ofEpochMilli(initialDate)
@@ -64,7 +61,6 @@ class QuickEntryViewModel(
         viewModelScope.launch {
             val history = repository.getReadinessSince(normalizedTimestamp)
             val existingEntry = history.find { it.dateTimestamp == normalizedTimestamp }
-
             if (existingEntry != null) {
                 sleep = existingEntry.sleepCode
                 hrv = existingEntry.hrvCode
@@ -80,23 +76,30 @@ class QuickEntryViewModel(
         if (journalText.isBlank()) return
         isAiLoading = true
         try {
-            // SZYBKI MÓZG: gpt-5.4-mini
-            val systemPrompt = "Jesteś analizatorem stresu w sporcie. Przeczytaj tekst użytkownika i oceń obciążenie jego organizmu. Zwróć TYLKO JEDNĄ LITERĘ i nic więcej. Legenda: L (chill), M (lekki stres), H (duży drenaż), X (kryzys)."
+            val systemPrompt = "Jesteś analizatorem stresu w sporcie. Przeczytaj tekst użytkownika i oceń obciążenie jego organizmu. Zwróć TYLKO JEDNĄ LITERĘ i nic więcej, żadnego lania wody. Legenda: L (dzień chillowy/normalny), M (lekki stres, małe błędy w diecie, 1 fakt negatywny), H (duży drenaż, np. kłótnia + śmieciowe jedzenie + odwodnienie), X (ekstremalny kryzys, choroba, zapaść systemu)."
+
+            val aiRepository = AiRepositoryImpl()
+
+            val conversationHistory = listOf(
+                Message(role = "system", content = systemPrompt),
+                Message(role = "user", content = journalText)
+            )
 
             val resultText = aiRepository.sendMessage(
-                userMessage = journalText,
-                systemPromptText = systemPrompt,
-                modelId = "gpt-5.4-mini"
+                conversationHistory = conversationHistory,
+                modelId = "gpt-4o-mini"
             )
 
             val finalLetter = resultText.trim().uppercase().take(1)
-
             if (finalLetter in listOf("L", "M", "H", "X")) {
                 stress = finalLetter
+            } else {
+                android.util.Log.e("STRESS_AI", "AI wypluło śmieci: $resultText")
             }
 
         } catch (e: Exception) {
             e.printStackTrace()
+            android.util.Log.e("STRESS_AI", "Błąd oceniania stresu: ${e.message}")
         } finally {
             isAiLoading = false
         }
