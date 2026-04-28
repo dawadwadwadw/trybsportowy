@@ -30,6 +30,11 @@ class ReadinessRepositoryImpl(private val dao: ReadinessDao) : ReadinessReposito
     override suspend fun getChatHistory(dayTimestamp: Long): List<ChatMessageEntity> {
         return dao.getChatHistory(dayTimestamp)
     }
-
+    override suspend fun deleteChatMessage(message: ChatMessageEntity) {
+        dao.deleteChatMessage(message)
+    }
+    override suspend fun clearChatForDay(dayTimestamp: Long) {
+        dao.deleteChatForDay(dayTimestamp)
+    }
 
 }

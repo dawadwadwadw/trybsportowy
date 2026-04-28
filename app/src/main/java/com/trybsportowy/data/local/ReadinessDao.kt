@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Delete
 
 @Dao
 interface ReadinessDao {
@@ -25,5 +26,10 @@ interface ReadinessDao {
     @Query("SELECT * FROM chat_messages WHERE dateTimestamp = :dayTimestamp ORDER BY timestamp ASC")
     suspend fun getChatHistory(dayTimestamp: Long): List<ChatMessageEntity>
 
+    @Delete
+    suspend fun deleteChatMessage(message: ChatMessageEntity)
+
+    @Query("DELETE FROM chat_messages WHERE dateTimestamp = :dayTimestamp")
+    suspend fun deleteChatForDay(dayTimestamp: Long)
 
 }

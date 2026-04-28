@@ -72,5 +72,9 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.generativeai)
+    implementation("com.halilibo.compose-richtext:richtext-ui-material3:0.20.0")
+    implementation("com.halilibo.compose-richtext:richtext-commonmark:0.20.0")
+    implementation("androidx.compose.material:material-icons-extended:1.x.x")
+
     ksp(libs.room.compiler)
 }
