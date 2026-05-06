@@ -1,0 +1,14 @@
+# Cache i logi
+.gradle/
+.idea/
+.vscode/
+.kotlin/
+build/
+*.log
+
+# Sekrety
+local.properties.gradle/
+.idea/
+.gradle/
+.idea/
+*.log
