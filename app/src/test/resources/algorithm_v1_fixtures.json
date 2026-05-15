@@ -1,0 +1,59 @@
+{
+  "algorithm_version": "v1",
+  "rounding_mode": "HALF_UP",
+  "fixtures": [
+    {
+      "name": "default_today_only",
+      "description": "Single default day today, no history.",
+      "input": [
+        { "day_offset": 0, "sleep_code": "S2", "hrv_code": "H2", "physical_load_code": "P0", "work_code": "W0", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 0, "body_drain": 0 }
+      ],
+      "expected": { "base_score": 20.0, "readiness_score": 20.0, "total_cns": 0.0, "total_body": 0.0, "overload_triggered": false, "d_code": 0.0 }
+    },
+    {
+      "name": "day_minus_one_sleep_weight_080_exception",
+      "description": "Yesterday sleep must use the 0.8 weight, not 0.75 (35*0.8=28).",
+      "input": [
+        { "day_offset": 0, "sleep_code": "S2", "hrv_code": "H2", "physical_load_code": "P0", "work_code": "W0", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 0, "body_drain": 0 },
+        { "day_offset": -1, "sleep_code": "S4", "hrv_code": "H2", "physical_load_code": "P0", "work_code": "W0", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 0, "body_drain": 0 }
+      ],
+      "expected": { "base_score": 48.0, "readiness_score": 48.0, "total_cns": 0.0, "total_body": 0.0, "overload_triggered": false, "d_code": 0.0 }
+    },
+    {
+      "name": "full_window_overload_triggered",
+      "description": "Full 4-day window with CNS overload (>6.0) applying the 0.85 penalty.",
+      "input": [
+        { "day_offset": 0, "sleep_code": "S2", "hrv_code": "H2", "physical_load_code": "P3", "work_code": "W2", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 4, "body_drain": 2 },
+        { "day_offset": -1, "sleep_code": "S2", "hrv_code": "H2", "physical_load_code": "P2", "work_code": "W0", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 2, "body_drain": 1 },
+        { "day_offset": -2, "sleep_code": "S1", "hrv_code": "H1", "physical_load_code": "P0", "work_code": "W0", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 3, "body_drain": 0 },
+        { "day_offset": -3, "sleep_code": "S0", "hrv_code": "H2", "physical_load_code": "P0", "work_code": "W0", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 0, "body_drain": 0 }
+      ],
+      "expected": { "base_score": -61.5, "readiness_score": -52.275, "total_cns": 7.0, "total_body": 2.75, "overload_triggered": true, "d_code": 9.8 }
+    },
+    {
+      "name": "full_window_just_under_overload",
+      "description": "total_cns + total_body == 6.0 exactly; strict > 6.0 so NO overload.",
+      "input": [
+        { "day_offset": 0, "sleep_code": "S2", "hrv_code": "H2", "physical_load_code": "P0", "work_code": "W0", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 6, "body_drain": 0 }
+      ],
+      "expected": { "base_score": 20.0, "readiness_score": 20.0, "total_cns": 6.0, "total_body": 0.0, "overload_triggered": false, "d_code": 6.0 }
+    },
+    {
+      "name": "full_window_just_over_overload",
+      "description": "total_cns == 7.0 (> 6.0) so overload applies: 20.0 * 0.85 = 17.0.",
+      "input": [
+        { "day_offset": 0, "sleep_code": "S2", "hrv_code": "H2", "physical_load_code": "P0", "work_code": "W0", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 7, "body_drain": 0 }
+      ],
+      "expected": { "base_score": 20.0, "readiness_score": 17.0, "total_cns": 7.0, "total_body": 0.0, "overload_triggered": true, "d_code": 7.0 }
+    },
+    {
+      "name": "missing_intermediate_days",
+      "description": "Today and Day -3 only; Day -1 and -2 missing (no contribution).",
+      "input": [
+        { "day_offset": 0, "sleep_code": "S3", "hrv_code": "H2", "physical_load_code": "P0", "work_code": "W0", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 0, "body_drain": 0 },
+        { "day_offset": -3, "sleep_code": "S4", "hrv_code": "H2", "physical_load_code": "P0", "work_code": "W0", "alcohol_code": "A0", "nutrition_code": "N1", "cns_drain": 0, "body_drain": 0 }
+      ],
+      "expected": { "base_score": 32.0, "readiness_score": 32.0, "total_cns": 0.0, "total_body": 0.0, "overload_triggered": false, "d_code": 0.0 }
+    }
+  ]
+}

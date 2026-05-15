@@ -78,4 +78,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.x.x")
 
     ksp(libs.room.compiler)
+
+    // Phase 1 — algorithm parity test harness
+    testImplementation(libs.junit)
+    testImplementation("com.google.code.gson:gson:2.10.1")
 }
