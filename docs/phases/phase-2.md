@@ -80,8 +80,8 @@ data class ComputedScoreCacheEntity(
 ```
 
 Add corresponding `Dao` interfaces with the queries the later phases need:
-- `SyncAttemptDao`: `insert`, `findByIdempotencyKey`, `markStatus`, `deleteOlderThan`
-- `ComputedScoreCacheDao`: `upsert`, `getByDateRange`, `getMostRecent`, `clear`
+- `SyncAttemptDao`: `insert`, `findOpenByPayloadHash`, `markStatus` (with an optional `responseSummary` parameter), `deleteOlderThan`
+- `ComputedScoreCacheDao`: `upsert`, `replaceAll`, `getByDateRange`, `getMostRecent`, `clear`
 
 ### §7.4 Migration
 

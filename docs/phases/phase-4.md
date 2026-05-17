@@ -17,7 +17,6 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")           // or 5.x if the project is on it
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("com.squareup.moshi:moshi:1.15.1")
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
     kapt("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")          // or KSP if the project uses it
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
@@ -112,7 +111,7 @@ object NetworkModule {
             .callTimeout(30, TimeUnit.SECONDS)
             .build()
 
-        val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+        val moshi = Moshi.Builder().build()  // codegen adapters (@JsonClass) auto-register; no reflective factory
 
         return Retrofit.Builder()
             .baseUrl(url)

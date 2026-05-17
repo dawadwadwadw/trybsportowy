@@ -456,7 +456,7 @@ class SecretsStore(context: Context) {
 
 Implementation uses `EncryptedSharedPreferences.create(...)` with `MasterKey.Builder(...).setKeyScheme(AES256_GCM).build()`. The file name (`secrets.xml`) is opaque on disk and ignored by `.gitignore`.
 
-**Logging:** `HeaderRedactor` (Phase 4) is an OkHttp `Interceptor` that explicitly redacts the `Authorization` header in any logging output, regardless of log level. The standard `HttpLoggingInterceptor` is configured with `level = HEADERS` in debug builds and `level = BASIC` in release. Independently of that, `HeaderRedactor` runs first and calls `HttpLoggingInterceptor.Logger`'s `redactHeader("Authorization")` (the API exists in OkHttp 5+; if the project is on OkHttp 4, write a custom filtering Logger and assert in a test that no log line contains "Bearer ").
+**Logging:** `HeaderRedactor` (Phase 4) is an OkHttp `Interceptor` that explicitly redacts the `Authorization` header in any logging output, regardless of log level. The standard `HttpLoggingInterceptor` is configured with `level = HEADERS` in debug builds and `level = BASIC` in release. Independently of that, `HeaderRedactor` runs first and `HttpLoggingInterceptor` is configured with `redactHeader("Authorization")` (this API is present in the pinned OkHttp `4.12.0` — see §9.1 — so no custom filtering Logger is needed; a unit test still asserts that no log line contains "Bearer ").
 
 A unit test (`AuthInterceptorTest.kt`) asserts that:
 1. Every outbound request has an `Authorization` header iff a secret is set.
