@@ -63,7 +63,7 @@ class ServerSettingsViewModel(private val secrets: SecretsStore) : ViewModel() {
         viewModelScope.launch {
             val result = runCatching {
                 withContext(Dispatchers.IO) {
-                    NetworkModule.create(_serverUrl.value).health()
+                    NetworkModule.createApi(secrets, _serverUrl.value).health()
                 }
             }
             _testState.value = result.fold(

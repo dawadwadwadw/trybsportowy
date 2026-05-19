@@ -1,19 +1,21 @@
 package com.trybsportowy.sync.api
 
+import com.squareup.moshi.Moshi
 import com.trybsportowy.BuildConfig
+import com.trybsportowy.settings.SecretsStore
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 
 /**
- * Builds [ServerApi] instances. Supports on-the-fly creation with un-saved
- * inputs so the Settings test-connection button can validate a URL/secret
- * before they are committed (CLAUDE.md §8.3).
+ * Builds [ServerApi] instances (CLAUDE.md §9.6). Supports on-the-fly creation
+ * with an un-saved base URL so the Settings test-connection button can validate
+ * before the values are committed.
  *
- * The Authorization header is redacted from all logging output regardless of
- * level (§4.6); the AuthInterceptor itself is added in Phase 4.
+ * The Authorization (and Idempotency-Key) headers are redacted from ALL logging
+ * output regardless of level (§4.6); AuthInterceptor injects the Bearer token.
  */
 object NetworkModule {
 
@@ -33,22 +35,26 @@ object NetworkModule {
         return if (trimmed.endsWith("/")) trimmed else "$trimmed/"
     }
 
-    /**
-     * @param secret reserved for Phase 4 (AuthInterceptor). Phase 3 only calls
-     *               the public health endpoint, which needs no auth.
-     */
-    fun create(baseUrl: String, secret: String? = null): ServerApi {
+    fun createApi(secrets: SecretsStore, baseUrl: String? = null): ServerApi {
+        val url = normalizeBaseUrl(
+            baseUrl ?: secrets.getServerUrl() ?: SecretsStore.DEFAULT_SERVER_URL
+        )
+
         val client = OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(secrets))
+            .addInterceptor(loggingInterceptor())
             .callTimeout(30, TimeUnit.SECONDS)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
-            .addInterceptor(loggingInterceptor())
             .build()
 
+        // Codegen adapters (@JsonClass) auto-register; no reflective factory.
+        val moshi = Moshi.Builder().build()
+
         return Retrofit.Builder()
-            .baseUrl(normalizeBaseUrl(baseUrl))
+            .baseUrl(url)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
             .create(ServerApi::class.java)
     }

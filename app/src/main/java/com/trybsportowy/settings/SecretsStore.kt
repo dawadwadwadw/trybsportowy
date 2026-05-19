@@ -3,13 +3,14 @@ package com.trybsportowy.settings
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.trybsportowy.sync.api.SecretProvider
 
 /**
  * The ONLY accessor for the Bearer secret and server URL (CLAUDE.md §4.6, §1.4).
  * Backed by EncryptedSharedPreferences (AES256). The secret never leaves this
  * class as a log line, a BuildConfig field, or a git-tracked file.
  */
-class SecretsStore(context: Context) {
+class SecretsStore(context: Context) : SecretProvider {
 
     private val prefs = run {
         val masterKey = MasterKey.Builder(context)
@@ -25,7 +26,7 @@ class SecretsStore(context: Context) {
     }
 
     fun saveSecret(secret: String) = prefs.edit().putString(K_SECRET, secret).apply()
-    fun getSecret(): String? = prefs.getString(K_SECRET, null)
+    override fun getSecret(): String? = prefs.getString(K_SECRET, null)
     fun clearSecret() = prefs.edit().remove(K_SECRET).apply()
     fun hasSecret(): Boolean = !getSecret().isNullOrBlank()
 

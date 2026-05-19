@@ -80,8 +80,12 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
     implementation(libs.retrofit.core)
-    implementation(libs.retrofit.gson)
+    implementation(libs.retrofit.gson)            // legacy: PaidApiClient (Gemini)
+    implementation(libs.retrofit.moshi)           // Phase 4 — server-sync transport
+    implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+    implementation(libs.moshi)
+    ksp(libs.moshi.kotlin.codegen)
     // Phase 3 — encrypted Bearer-secret storage (§4.6)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation(libs.room.runtime)
@@ -96,6 +100,9 @@ dependencies {
     // Phase 1 — algorithm parity test harness
     testImplementation(libs.junit)
     testImplementation("com.google.code.gson:gson:2.10.1")
+
+    // Phase 4 — networking unit tests
+    testImplementation(libs.okhttp.mockwebserver)
 
     // Phase 2 — Room migration instrumented test
     androidTestImplementation("androidx.room:room-testing:2.6.1")
