@@ -63,8 +63,8 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.labelLarge
             )
             Slider(
-                value = currentSettings.weightYesterdaySleep,
-                onValueChange = { viewModel.updateSettings(currentSettings.copy(weightYesterdaySleep = it)) },
+                value = currentSettings.weightYesterdaySleep.toFloat(),
+                onValueChange = { viewModel.updateSettings(currentSettings.copy(weightYesterdaySleep = it.toDouble())) },
                 valueRange = 0.5f..1.2f // Bezpieczny zakres
             )
 
@@ -76,8 +76,8 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.labelLarge
             )
             Slider(
-                value = currentSettings.weightYesterday,
-                onValueChange = { viewModel.updateSettings(currentSettings.copy(weightYesterday = it)) },
+                value = currentSettings.weightYesterday.toFloat(),
+                onValueChange = { viewModel.updateSettings(currentSettings.copy(weightYesterday = it.toDouble())) },
                 valueRange = 0f..1f
             )
 

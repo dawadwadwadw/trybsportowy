@@ -12,7 +12,7 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 /**
- * Retrofit interface for /api/android/* (CLAUDE.md §1.10 — the single
+ * Retrofit interface for /api/android/ (CLAUDE.md §1.10 — the single
  * sanctioned transport; no hand-rolled URL.openConnection anywhere).
  *
  * `sync` returns Response<T> so the caller can distinguish 200 vs 207 vs 401
