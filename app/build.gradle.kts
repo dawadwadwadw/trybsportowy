@@ -53,6 +53,18 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // Room exports schema JSON here (§4.2). Also exposed to instrumented tests
+    // as an asset so MigrationTestHelper can validate against the v4 schema.
+    sourceSets {
+        getByName("androidTest") {
+            assets.srcDirs(files("$projectDir/schemas"))
+        }
+    }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -82,4 +94,9 @@ dependencies {
     // Phase 1 — algorithm parity test harness
     testImplementation(libs.junit)
     testImplementation("com.google.code.gson:gson:2.10.1")
+
+    // Phase 2 — Room migration instrumented test
+    androidTestImplementation("androidx.room:room-testing:2.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test:runner:1.5.2")
 }
