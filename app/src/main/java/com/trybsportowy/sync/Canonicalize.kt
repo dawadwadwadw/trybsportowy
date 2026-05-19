@@ -45,8 +45,10 @@ private fun canonicalizeOne(d: DailyReadinessDto): String {
  * Minimal RFC 8259 string escaping matching Python json.dumps defaults:
  * short escapes for " \ \n \r \t \b \f, \uXXXX for other control chars.
  * Code-point matching avoids any non-printable char literals in source.
+ * `internal` so the entity->DTO mapper reuses the exact same escaping (one
+ * source of truth keeps the canonical idempotency hash consistent).
  */
-private fun jsonString(s: String): String {
+internal fun jsonString(s: String): String {
     val sb = StringBuilder(s.length + 2)
     sb.append('"')
     for (c in s) {

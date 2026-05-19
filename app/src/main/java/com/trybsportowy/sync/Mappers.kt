@@ -29,9 +29,26 @@ fun DailyReadinessEntity.toDto(): DailyReadinessDto = DailyReadinessDto(
     nutritionCode = nutritionCode,
     cnsDrain = cnsDrain,
     bodyDrain = bodyDrain,
-    // Server wants a JSON-encoded array STRING; an empty local value is "[]".
-    drainTags = drainTags.ifBlank { "[]" }
+    // §2.2: drain_tags is a JSON-encoded array STRING. Local storage is a CSV
+    // of tag ids (QuickEntryViewModel uses joinToString(",")), so convert here
+    // at the wire boundary. Sending the raw CSV is what the server rejects.
+    drainTags = csvToJsonArrayString(drainTags)
 )
+
+/**
+ * "" / "  " -> "[]" ; "a, b" -> ["a","b"] (JSON-encoded array STRING, §2.2).
+ * If the value already looks like a JSON array (legacy/imported data), pass
+ * it through trimmed rather than mangling it by splitting on commas. Uses the
+ * same escaping as canonicalize() so the idempotency hash stays consistent.
+ */
+internal fun csvToJsonArrayString(csv: String): String {
+    val trimmed = csv.trim()
+    if (trimmed.startsWith("[")) return trimmed
+    return trimmed.split(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .joinToString(prefix = "[", postfix = "]", separator = ",") { jsonString(it) }
+}
 
 fun ReadinessRecordDto.toCacheEntity(fetchedAtMs: Long): ComputedScoreCacheEntity =
     ComputedScoreCacheEntity(
