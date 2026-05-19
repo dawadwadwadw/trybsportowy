@@ -1,3 +1,31 @@
 <resources>
     <string name="app_name">trybsportowy</string>
+
+    <!-- Phase 3 — server sync settings -->
+    <string name="settings_title">Ustawienia synchronizacji</string>
+    <string name="settings_server_url_label">Adres serwera</string>
+    <string name="settings_secret_label">Token dostępu</string>
+    <string name="settings_secret_saved_hint">Token jest zapisany. Wpisz nowy, aby go zmienić.</string>
+    <string name="settings_save">Zapisz</string>
+    <string name="settings_saved">Zapisano.</string>
+    <string name="settings_test">Testuj połączenie</string>
+    <string name="settings_testing">Łączenie…</string>
+    <string name="settings_test_ok">Połączono. Wersja: %1$s</string>
+    <string name="settings_test_failed">Błąd połączenia: %1$s</string>
+    <string name="settings_secret_invalid">Token jest nieprawidłowy. Zaktualizuj go i zapisz.</string>
+    <string name="settings_show_secret">Pokaż token</string>
+    <string name="settings_hide_secret">Ukryj token</string>
+    <string name="settings_back">Powrót</string>
+    <string name="settings_open_server_sync">Synchronizacja z serwerem</string>
+
+    <!-- Phase 6 — sync status line + manual trigger -->
+    <string name="sync_now">Synchronizuj teraz</string>
+    <string name="sync_status_token_invalid">Token nieprawidłowy. Otwórz ustawienia.</string>
+    <string name="sync_status_running">Synchronizuję…</string>
+    <string name="sync_status_just_now">Zsynchronizowano przed chwilą.</string>
+    <string name="sync_status_last">Ostatnia synchronizacja: %1$s</string>
+    <string name="sync_status_failed_network">Synchronizacja nieudana — ponowię gdy będzie sieć.</string>
+    <string name="sync_status_failed_server">Synchronizacja nieudana: %1$s</string>
+    <string name="sync_status_none">Brak synchronizacji.</string>
+    <string name="score_local_marker">~</string>
 </resources>

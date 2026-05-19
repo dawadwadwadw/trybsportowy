@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Delete
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ReadinessDao {
@@ -16,6 +17,19 @@ interface ReadinessDao {
 
     @Query("SELECT * FROM daily_readiness WHERE dateTimestamp >= :fromTimestamp ORDER BY dateTimestamp DESC")
     suspend fun getReadinessSince(fromTimestamp: Long): List<DailyReadinessEntity>
+
+    // ─── Sync (Phase 5) — query-only, no schema change ───────────────
+    @Query("SELECT * FROM daily_readiness ORDER BY dateTimestamp DESC")
+    fun observeAll(): Flow<List<DailyReadinessEntity>>
+
+    @Query("SELECT * FROM daily_readiness WHERE syncState = :state ORDER BY dateTimestamp ASC")
+    suspend fun getBySyncState(state: String): List<DailyReadinessEntity>
+
+    @Query("UPDATE daily_readiness SET syncState = :state WHERE dateTimestamp IN (:ids)")
+    suspend fun markSyncState(ids: List<Long>, state: String)
+
+    @Query("UPDATE daily_readiness SET syncState = :state, syncError = :error WHERE dateTimestamp IN (:ids)")
+    suspend fun markSyncStateWithError(ids: List<Long>, state: String, error: String?)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDecaySettings(settings: DecaySettingsEntity)

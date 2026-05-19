@@ -62,10 +62,10 @@ class CalculateReadinessUseCase {
             val sleepWeight: Double
             val otherWeight: Double
             when (daysAgo) {
-                0 -> { sleepWeight = settings.weightToday.toDouble();          otherWeight = settings.weightToday.toDouble() }
-                1 -> { sleepWeight = settings.weightYesterdaySleep.toDouble(); otherWeight = settings.weightYesterday.toDouble() }
-                2 -> { sleepWeight = settings.weightTwoDaysAgo.toDouble();      otherWeight = settings.weightTwoDaysAgo.toDouble() }
-                else -> { sleepWeight = settings.weightThreeDaysAgo.toDouble(); otherWeight = settings.weightThreeDaysAgo.toDouble() }
+                0 -> { sleepWeight = settings.weightToday;          otherWeight = settings.weightToday }
+                1 -> { sleepWeight = settings.weightYesterdaySleep; otherWeight = settings.weightYesterday }
+                2 -> { sleepWeight = settings.weightTwoDaysAgo;      otherWeight = settings.weightTwoDaysAgo }
+                else -> { sleepWeight = settings.weightThreeDaysAgo; otherWeight = settings.weightThreeDaysAgo }
             }
 
             val s = sleepPoints(day.sleepCode)

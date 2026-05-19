@@ -23,11 +23,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.trybsportowy.R
 import com.trybsportowy.TrybsportowyApplication
 import com.trybsportowy.data.local.DailyReadinessEntity
 import com.trybsportowy.data.local.DecaySettingsEntity
 import com.trybsportowy.domain.usecase.CalculateReadinessUseCase
+import com.trybsportowy.sync.SyncScheduler
+import com.trybsportowy.ui.pro.SyncStatusLine
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -96,20 +103,36 @@ fun calculateStackedLoad(e: DailyReadinessEntity?): DayLoad {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProDashboardScreen(app: TrybsportowyApplication, onBack: () -> Unit) {
+fun ProDashboardScreen(
+    app: TrybsportowyApplication,
+    onBack: () -> Unit,
+    onOpenSettings: () -> Unit = {}
+) {
     val history  = remember { mutableStateListOf<DailyReadinessEntity>() }
     val settings = remember { mutableStateOf(DecaySettingsEntity()) }
     val calc     = remember { CalculateReadinessUseCase() }
     var loading  by remember { mutableStateOf(true) }
     var error    by remember { mutableStateOf<String?>(null) }
     var selected by remember { mutableStateOf<DailyReadinessEntity?>(null) }
+    // Server's computed scores keyed by dateTimestamp (ms) — §11.3.
+    val cachedScores = remember { mutableStateOf<Map<Long, Double>>(emptyMap()) }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var syncEnabled by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         try {
             val data = withContext(Dispatchers.IO) { app.repository.getReadinessSince(0) }
             val sett = withContext(Dispatchers.IO) { app.repository.getDecaySettings() }
+            val cache = withContext(Dispatchers.IO) {
+                app.database.computedScoreCacheDao.getAll()
+                    .filter { it.algorithmVersion == "v1" }
+                    .associate { it.dateTimestamp to it.readinessScore }
+            }
             history.addAll(data)
             settings.value = sett
+            cachedScores.value = cache
         } catch (e: Exception) {
             error = e.localizedMessage
         } finally {
@@ -120,7 +143,17 @@ fun ProDashboardScreen(app: TrybsportowyApplication, onBack: () -> Unit) {
     Scaffold(topBar = {
         TopAppBar(
             title = { Text("DASHBOARD PRO", fontWeight = FontWeight.Black) },
-            navigationIcon = { IconButton(onClick = onBack) { Text("✕", fontSize = 20.sp) } }
+            navigationIcon = { IconButton(onClick = onBack) { Text("✕", fontSize = 20.sp) } },
+            actions = {
+                TextButton(
+                    enabled = syncEnabled,
+                    onClick = {
+                        SyncScheduler.triggerOnce(context)
+                        syncEnabled = false
+                        scope.launch { delay(3_000L); syncEnabled = true }
+                    }
+                ) { Text(stringResource(R.string.sync_now)) }
+            }
         )
     }) { pad ->
         when {
@@ -134,7 +167,8 @@ fun ProDashboardScreen(app: TrybsportowyApplication, onBack: () -> Unit) {
                 Modifier.padding(pad).fillMaxSize()
                     .background(Color(0xFF121212)).verticalScroll(rememberScrollState())
             ) {
-                MirrorChart(history, settings.value, calc, onDayClick = { selected = it })
+                SyncStatusLine(app = app, onOpenSettings = onOpenSettings)
+                MirrorChart(history, settings.value, calc, cachedScores.value, onDayClick = { selected = it })
                 InjuryGuardWidget(history)
                 AiDetectiveWidget(history)
                 Spacer(Modifier.height(32.dp))
@@ -181,6 +215,7 @@ fun MirrorChart(
     history: List<DailyReadinessEntity>,
     settings: DecaySettingsEntity,
     calculator: CalculateReadinessUseCase,
+    cachedScores: Map<Long, Double>,
     onDayClick: (DailyReadinessEntity?) -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -199,7 +234,8 @@ fun MirrorChart(
                     calculator.execute(history.filter { it.dateTimestamp <= ts }, settings, ts)
                 } else 0f
                 val load = calculateStackedLoad(ent)
-                DayColumn(date, score, load, ent, date == today, date.dayOfWeek.value >= 6) {
+                val serverScore = ent?.let { cachedScores[it.dateTimestamp] }
+                DayColumn(date, score, serverScore, load, ent, date == today, date.dayOfWeek.value >= 6) {
                     onDayClick(ent)
                 }
             }
@@ -210,10 +246,25 @@ fun MirrorChart(
 // ─── DayColumn ────────────────────────────────────────────────────────────────
 @Composable
 private fun DayColumn(
-    date: LocalDate, score: Float, load: DayLoad,
+    date: LocalDate, score: Float, serverScore: Double?, load: DayLoad,
     entity: DailyReadinessEntity?, isToday: Boolean, isWeekend: Boolean,
     onClick: () -> Unit
 ) {
+    // §11.3: prefer the server's computed score; fall back to local + "~".
+    val hasServer = serverScore != null
+    val effective = serverScore?.toFloat() ?: score
+    if (hasServer && score != 0f && kotlin.math.abs(effective - score) > 1f) {
+        // §4.1 violation surfaced, never papered over.
+        Log.w(
+            "ProDashboard",
+            "Readiness mismatch ts=${entity?.dateTimestamp} local=$score server=$effective"
+        )
+    }
+    val marker = if (!hasServer && score != 0f) {
+        stringResource(R.string.score_local_marker)
+    } else {
+        ""
+    }
     Column(
         Modifier.width(72.dp).background(Color.Transparent, RoundedCornerShape(6.dp))
             .clickable { onClick() }.padding(horizontal = 3.dp, vertical = 2.dp),
@@ -221,15 +272,15 @@ private fun DayColumn(
     ) {
         // ── TOP: Readiness ──────────────────────────────────────────────
         Box(Modifier.height(130.dp).fillMaxWidth(), Alignment.BottomCenter) {
-            val color  = readinessColor(score)
-            val height = (score.coerceIn(0f, 150f) / 150f * 120f).coerceAtLeast(if (score != 0f) 2f else 0f).dp
-            if (score != 0f) {
+            val color  = readinessColor(effective)
+            val height = (effective.coerceIn(0f, 150f) / 150f * 120f).coerceAtLeast(if (effective != 0f) 2f else 0f).dp
+            if (effective != 0f) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Bottom,
                     modifier = Modifier.fillMaxHeight()
                 ) {
                     Text(
-                        text = "${if (score > 0) "+" else ""}${score.toInt()}",
+                        text = "${if (effective > 0) "+" else ""}${effective.toInt()}$marker",
                         color = color, fontSize = 8.sp, fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(2.dp))

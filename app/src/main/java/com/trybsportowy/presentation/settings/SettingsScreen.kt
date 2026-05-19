@@ -5,12 +5,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.trybsportowy.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit,
+    onOpenServerSync: () -> Unit = {}
+) {
     val currentSettings by viewModel.settings.collectAsState()
 
     // 1. DEKLARACJE ZMIENNYCH NA SAMEJ GÓRZE
@@ -57,8 +63,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 style = MaterialTheme.typography.labelLarge
             )
             Slider(
-                value = currentSettings.weightYesterdaySleep,
-                onValueChange = { viewModel.updateSettings(currentSettings.copy(weightYesterdaySleep = it)) },
+                value = currentSettings.weightYesterdaySleep.toFloat(),
+                onValueChange = { viewModel.updateSettings(currentSettings.copy(weightYesterdaySleep = it.toDouble())) },
                 valueRange = 0.5f..1.2f // Bezpieczny zakres
             )
 
@@ -70,8 +76,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 style = MaterialTheme.typography.labelLarge
             )
             Slider(
-                value = currentSettings.weightYesterday,
-                onValueChange = { viewModel.updateSettings(currentSettings.copy(weightYesterday = it)) },
+                value = currentSettings.weightYesterday.toFloat(),
+                onValueChange = { viewModel.updateSettings(currentSettings.copy(weightYesterday = it.toDouble())) },
                 valueRange = 0f..1f
             )
 
@@ -113,6 +119,16 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Importuj Kopię", color = MaterialTheme.colorScheme.primary)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- SERVER SYNC ENTRY (Phase 3) ---
+            OutlinedButton(
+                onClick = onOpenServerSync,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.settings_open_server_sync))
             }
 
             Spacer(modifier = Modifier.height(24.dp))

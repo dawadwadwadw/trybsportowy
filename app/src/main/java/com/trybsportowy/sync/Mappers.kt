@@ -1,0 +1,66 @@
+package com.trybsportowy.sync
+
+import com.trybsportowy.data.local.ComputedScoreCacheEntity
+import com.trybsportowy.data.local.DailyReadinessEntity
+import com.trybsportowy.sync.api.dto.DailyReadinessDto
+import com.trybsportowy.sync.api.dto.ReadinessRecordDto
+
+/**
+ * Entity <-> DTO mapping, and the ONE place the epoch-unit boundary is crossed.
+ *
+ * Local `DailyReadinessEntity.dateTimestamp` is epoch MILLIS (the app's
+ * long-standing convention — e.g. MainActivity uses Instant.ofEpochMilli on
+ * it). The server contract (§2.2) is epoch SECONDS. We convert ONLY here, at
+ * the wire boundary, and never mutate stored values (§4.5, non-destructive).
+ * Verify against a real stored row during the Phase 5 device checkpoint before
+ * trusting this — see CHANGELOG / plan.
+ */
+
+private const val MILLIS_PER_SECOND = 1000L
+
+fun DailyReadinessEntity.toDto(): DailyReadinessDto = DailyReadinessDto(
+    dateTimestamp = dateTimestamp / MILLIS_PER_SECOND,           // ms -> s
+    tz = tz,
+    sleepCode = sleepCode,
+    hrvCode = hrvCode,
+    physicalLoadCode = physicalLoadCode,
+    workCode = workCode,
+    alcoholCode = alcoholCode,
+    nutritionCode = nutritionCode,
+    cnsDrain = cnsDrain,
+    bodyDrain = bodyDrain,
+    // §2.2: drain_tags is a JSON-encoded array STRING. Local storage is a CSV
+    // of tag ids (QuickEntryViewModel uses joinToString(",")), so convert here
+    // at the wire boundary. Sending the raw CSV is what the server rejects.
+    drainTags = csvToJsonArrayString(drainTags)
+)
+
+/**
+ * "" / "  " -> "[]" ; "a, b" -> ["a","b"] (JSON-encoded array STRING, §2.2).
+ * If the value already looks like a JSON array (legacy/imported data), pass
+ * it through trimmed rather than mangling it by splitting on commas. Uses the
+ * same escaping as canonicalize() so the idempotency hash stays consistent.
+ */
+internal fun csvToJsonArrayString(csv: String): String {
+    val trimmed = csv.trim()
+    if (trimmed.startsWith("[")) return trimmed
+    return trimmed.split(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .joinToString(prefix = "[", postfix = "]", separator = ",") { jsonString(it) }
+}
+
+fun ReadinessRecordDto.toCacheEntity(fetchedAtMs: Long): ComputedScoreCacheEntity =
+    ComputedScoreCacheEntity(
+        dateTimestamp = dateTimestamp * MILLIS_PER_SECOND,        // s -> ms
+        algorithmVersion = computed.algorithmVersion,
+        readinessScore = computed.readinessScore,
+        dCode = computed.dCode,
+        totalCns = computed.totalCns,
+        totalBody = computed.totalBody,
+        overloadTriggered = computed.overloadTriggered,
+        fetchedAt = fetchedAtMs
+    )
+
+/** Server error rows carry epoch SECONDS; convert to local ms for matching. */
+fun Long.serverSecondsToLocalMs(): Long = this * MILLIS_PER_SECOND

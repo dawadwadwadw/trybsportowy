@@ -53,6 +53,18 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // Room exports schema JSON here (§4.2). Also exposed to instrumented tests
+    // as an asset so MigrationTestHelper can validate against the v4 schema.
+    sourceSets {
+        getByName("androidTest") {
+            assets.srcDirs(files("$projectDir/schemas"))
+        }
+    }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -68,8 +80,16 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
     implementation(libs.retrofit.core)
-    implementation(libs.retrofit.gson)
+    implementation(libs.retrofit.gson)            // legacy: PaidApiClient (Gemini)
+    implementation(libs.retrofit.moshi)           // Phase 4 — server-sync transport
+    implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+    implementation(libs.moshi)
+    ksp(libs.moshi.kotlin.codegen)
+    // Phase 3 — encrypted Bearer-secret storage (§4.6)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    // Phase 5 — background sync
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.generativeai)
@@ -82,4 +102,17 @@ dependencies {
     // Phase 1 — algorithm parity test harness
     testImplementation(libs.junit)
     testImplementation("com.google.code.gson:gson:2.10.1")
+
+    // Phase 4 — networking unit tests
+    testImplementation(libs.okhttp.mockwebserver)
+
+    // Phase 2 — Room migration instrumented test
+    androidTestImplementation("androidx.room:room-testing:2.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test:runner:1.5.2")
+
+    // Phase 5 — SyncRepository instrumented test (in-memory Room + MockWebServer)
+    androidTestImplementation(libs.okhttp.mockwebserver)
+    androidTestImplementation(libs.retrofit.moshi)
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 }
