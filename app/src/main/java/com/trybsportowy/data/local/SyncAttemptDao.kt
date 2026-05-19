@@ -32,4 +32,7 @@ interface SyncAttemptDao {
 
     @Query("SELECT * FROM sync_attempt ORDER BY id DESC LIMIT 1")
     suspend fun mostRecent(): SyncAttemptEntity?
+
+    @Query("SELECT COUNT(*) FROM sync_attempt")
+    suspend fun count(): Int
 }

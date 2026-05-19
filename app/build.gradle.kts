@@ -88,6 +88,8 @@ dependencies {
     ksp(libs.moshi.kotlin.codegen)
     // Phase 3 — encrypted Bearer-secret storage (§4.6)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    // Phase 5 — background sync
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.generativeai)
@@ -108,4 +110,9 @@ dependencies {
     androidTestImplementation("androidx.room:room-testing:2.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test:runner:1.5.2")
+
+    // Phase 5 — SyncRepository instrumented test (in-memory Room + MockWebServer)
+    androidTestImplementation(libs.okhttp.mockwebserver)
+    androidTestImplementation(libs.retrofit.moshi)
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 }

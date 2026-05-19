@@ -4,10 +4,22 @@ import com.trybsportowy.data.local.DailyReadinessEntity
 import com.trybsportowy.data.local.DecaySettingsEntity
 import com.trybsportowy.data.local.ReadinessDao
 import com.trybsportowy.domain.repository.ReadinessRepository
+import com.trybsportowy.sync.SyncState
 
 class ReadinessRepositoryImpl(private val dao: ReadinessDao) : ReadinessRepository {
+    /**
+     * Single entity-write path (§1.5). Every create/edit stamps sync metadata
+     * so the row is picked up by the next sync (§4.3, §7.2): updatedAt bumped,
+     * syncState reset to PENDING, prior error cleared.
+     */
     override suspend fun saveDailyReadiness(entity: DailyReadinessEntity) {
-        dao.insertDailyReadiness(entity)
+        dao.insertDailyReadiness(
+            entity.copy(
+                updatedAt = System.currentTimeMillis(),
+                syncState = SyncState.PENDING.name,
+                syncError = null
+            )
+        )
     }
     override suspend fun deleteDailyReadiness(entity: DailyReadinessEntity) {
         dao.deleteDailyReadiness(entity)
