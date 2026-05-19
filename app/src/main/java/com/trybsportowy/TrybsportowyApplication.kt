@@ -6,12 +6,16 @@ import com.trybsportowy.data.local.AppDatabase
 import com.trybsportowy.data.local.migrations.Migration_3_4
 import com.trybsportowy.data.repository.ReadinessRepositoryImpl
 import com.trybsportowy.domain.repository.ReadinessRepository
+import com.trybsportowy.settings.SecretsStore
 
 class TrybsportowyApplication : Application() {
     lateinit var database: AppDatabase
         private set
     lateinit var repository: ReadinessRepository
         private set
+
+    /** Sole accessor for the Bearer secret + server URL (§4.6). */
+    val secretsStore: SecretsStore by lazy { SecretsStore(applicationContext) }
 
     override fun onCreate() {
         super.onCreate()

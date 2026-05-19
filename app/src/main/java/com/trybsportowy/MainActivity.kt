@@ -37,6 +37,8 @@ import com.trybsportowy.presentation.daydetail.DayDetailScreen
 import com.trybsportowy.presentation.quickentry.QuickEntryActivity
 import com.trybsportowy.presentation.settings.SettingsScreen
 import com.trybsportowy.presentation.settings.SettingsViewModel
+import com.trybsportowy.settings.ServerSettingsScreen
+import com.trybsportowy.settings.ServerSettingsViewModel
 import com.trybsportowy.ui.theme.TrybsportowyTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -53,14 +55,21 @@ class MainActivity : ComponentActivity() {
         this.setContent {
             TrybsportowyTheme {
                 var showSettings    by remember { mutableStateOf(false) }
+                var showServerSettings by remember { mutableStateOf(false) }
                 var showProDashboard by remember { mutableStateOf(false) }
                 var detailEntity    by remember { mutableStateOf<DailyReadinessEntity?>(null) }
                 var detailScore     by remember { mutableStateOf(0f) }
 
                 when {
+                    showServerSettings -> ServerSettingsScreen(
+                        viewModel = ServerSettingsViewModel(app.secretsStore),
+                        onBack = { showServerSettings = false }
+                    )
+
                     showSettings -> SettingsScreen(
                         viewModel = SettingsViewModel(app.repository),
-                        onBack = { showSettings = false }
+                        onBack = { showSettings = false },
+                        onOpenServerSync = { showServerSettings = true }
                     )
 
                     showProDashboard -> ProDashboardScreen(

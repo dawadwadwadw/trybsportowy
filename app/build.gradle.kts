@@ -82,6 +82,8 @@ dependencies {
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp.logging)
+    // Phase 3 — encrypted Bearer-secret storage (§4.6)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.generativeai)
