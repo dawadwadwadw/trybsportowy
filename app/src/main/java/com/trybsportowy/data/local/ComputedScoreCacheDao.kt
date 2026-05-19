@@ -35,6 +35,9 @@ abstract class ComputedScoreCacheDao {
     @Query("SELECT * FROM readiness_computed_cache WHERE dateTimestamp = :ts LIMIT 1")
     abstract suspend fun getByDate(ts: Long): ComputedScoreCacheEntity?
 
+    @Query("SELECT * FROM readiness_computed_cache")
+    abstract suspend fun getAll(): List<ComputedScoreCacheEntity>
+
     @Query("SELECT * FROM readiness_computed_cache ORDER BY dateTimestamp DESC LIMIT 1")
     abstract suspend fun getMostRecent(): ComputedScoreCacheEntity?
 }

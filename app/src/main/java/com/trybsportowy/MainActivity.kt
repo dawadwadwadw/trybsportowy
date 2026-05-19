@@ -74,7 +74,8 @@ class MainActivity : ComponentActivity() {
 
                     showProDashboard -> ProDashboardScreen(
                         app = app,
-                        onBack = { showProDashboard = false }
+                        onBack = { showProDashboard = false },
+                        onOpenSettings = { showServerSettings = true }
                     )
 
                     detailEntity != null -> DayDetailScreen(

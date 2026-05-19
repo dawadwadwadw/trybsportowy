@@ -17,4 +17,15 @@
     <string name="settings_hide_secret">Ukryj token</string>
     <string name="settings_back">Powrót</string>
     <string name="settings_open_server_sync">Synchronizacja z serwerem</string>
+
+    <!-- Phase 6 — sync status line + manual trigger -->
+    <string name="sync_now">Synchronizuj teraz</string>
+    <string name="sync_status_token_invalid">Token nieprawidłowy. Otwórz ustawienia.</string>
+    <string name="sync_status_running">Synchronizuję…</string>
+    <string name="sync_status_just_now">Zsynchronizowano przed chwilą.</string>
+    <string name="sync_status_last">Ostatnia synchronizacja: %1$s</string>
+    <string name="sync_status_failed_network">Synchronizacja nieudana — ponowię gdy będzie sieć.</string>
+    <string name="sync_status_failed_server">Synchronizacja nieudana: %1$s</string>
+    <string name="sync_status_none">Brak synchronizacji.</string>
+    <string name="score_local_marker">~</string>
 </resources>
