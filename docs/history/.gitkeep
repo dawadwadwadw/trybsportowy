@@ -1,0 +1,2 @@
+# Pre-edit backups of long-lived schema files (CLAUDE.md §1.11).
+# Format: <filename>.<unix-ts>.bak
