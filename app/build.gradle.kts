@@ -75,7 +75,11 @@ dependencies {
     implementation(libs.generativeai)
     implementation("com.halilibo.compose-richtext:richtext-ui-material3:0.20.0")
     implementation("com.halilibo.compose-richtext:richtext-commonmark:0.20.0")
-    implementation("androidx.compose.material:material-icons-extended:1.x.x")
+    implementation("androidx.compose.material:material-icons-extended")
 
     ksp(libs.room.compiler)
+
+    // Phase 1 — algorithm parity test harness
+    testImplementation(libs.junit)
+    testImplementation("com.google.code.gson:gson:2.10.1")
 }

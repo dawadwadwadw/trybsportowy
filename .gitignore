@@ -1,4 +1,4 @@
-# Cache i logi
+# Build output and caches
 .gradle/
 .idea/
 .vscode/
@@ -6,9 +6,7 @@
 build/
 *.log
 
-# Sekrety
-local.properties.gradle/
-.idea/
-.gradle/
-.idea/
-*.log
+# Secrets — must never reach git (CLAUDE.md §1.4)
+local.properties
+*.secret
+app/src/main/assets/secrets/
